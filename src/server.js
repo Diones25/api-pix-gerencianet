@@ -1,63 +1,56 @@
-if(process.env.NODE_ENV !== 'production') {
-  const dotenv = require('dotenv');
-  dotenv.config();
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config()
 }
 
 const express = require('express');
-const apiRequest = require('./api/gerencianet.js');
+const GNRequest = require('./api/gerencianet.js');
 
 const app = express();
-
-app.use(express.json());
-
 app.set('view engine', 'ejs');
 app.set('views', 'src/views');
-const apiReady = apiRequest({
-  clientID: process.env.GN_CLIENT_ID,
-  clientSecret: process.env.GN_CLIENTE_SECRET
-});
 
-app.get('/', async (req, res) => { //Essa get gera um QRcode de cobrança   
-  const api = await apiReady;
+const reqGNAlready = GNRequest();
 
-  //const api = await apiRequest(); essa linha gera o token repetidas vezes
+app.get('/', async (req, res) => {
+  const reqGN = await reqGNAlready;
 
   const dataCob = {
     calendario: {
-      expiracao: 3600,
+      expiracao: 3600
     },
     valor: {
-      original: "08.75",
+      "original": "2.00"
     },
-    chave: "71cdf9ba-c695-4e3c-b010-abb521a3f1be",
-    solicitacaoPagador: "Informe o número ou identificador do pedido.",
-  };
+    chave: "1b7884d6-ce50-4edc-b45e-11d39b61470b",
+    solicitacaoPagador: "Cobrança dos serviços prestados."
+  }
 
-  const cobResponse = await api.post('v2/cob', dataCob)
-    
+  //No response da cobrança imediata já gera um objeto com uma string do 'pixCopiaECola'
+  const cobResponse = await reqGN.post('/v2/cob', dataCob);
+  const qrcodeResponse = await reqGN.get(`/v2/loc/${cobResponse.data.loc.id}/qrcode`);
+  res.render('qrcode', { qrcodeImage: qrcodeResponse.data.imagemQrcode })
   
-  const qrcodeResponse = await api.get(`v2/loc/${cobResponse.data.loc.id}/qrcode`);
-  
-  //res.send(qrcodeResponse.data);
 
-  res.render('qrcode', {qrcodeImage: qrcodeResponse.data.imagemQrcode})
-})
-
-app.get('/cobrancas', async(req, res) => { //lista as cobranças
-  const api = await apiReady;
-
-  const cobResponse = await api.get('/v2/cob?inicio=2023-05-11T16:01:35Z&fim=2023-05-13T20:10:00Z');
-
-  res.send(cobResponse.data)
 });
 
-app.post('/webhook(/pix)?', (req, res) => {
-  console.log(req.body);
-  res.send('200');
-})
-
 app.listen(8000, () => {
-  console.log('running => http://localhost:8000')
+  console.log('running => http://localhost:8000');
 })
 
- 
+/* 
+body request de cobrança
+{
+  "calendario": {
+    "expiracao": 3600
+  },
+  "devedor": {
+    "cpf": "12345678909",
+    "nome": "Francisco da Silva"
+  },
+  "valor": {
+    "original": "100.00"
+  },
+  "chave": "1b7884d6-ce50-4edc-b45e-11d39b61470b",
+  "solicitacaoPagador": "Cobrança dos serviços prestados."
+}
+*/
