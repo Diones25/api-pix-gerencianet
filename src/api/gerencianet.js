@@ -34,7 +34,7 @@ const GNRequest = async () => {
   const authResponse = await authenticate();
   const acessToken = authResponse.data?.access_token;
 
-  return axios.create({
+  const api = axios.create({
     baseURL: process.env.GN_ENDPOINT,
     httpsAgent: agent,
     headers: {
@@ -42,6 +42,12 @@ const GNRequest = async () => {
       'ContentType': 'application/json'
     }
   });
+
+  /*
+    O refresh token pode ser implementado aqui
+  */
+
+  return api;
 }
 
 module.exports = GNRequest;
