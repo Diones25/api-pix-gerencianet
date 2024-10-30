@@ -11,8 +11,8 @@ app.set('views', 'src/views');
 
 app.use(router);
 
-app.listen(8000, () => {
-  console.log('running => http://localhost:8000');
+app.listen(4000, () => {
+  console.log('running => http://localhost:4000');
 })
 
 /* 
