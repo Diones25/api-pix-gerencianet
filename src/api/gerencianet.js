@@ -30,6 +30,7 @@ const authenticate = () => {
   });
 }
 
+// Função principal de criação de instância
 const GNRequest = async () => {
   let authResponse = await authenticate();
   let accessToken = authResponse.data?.access_token;
@@ -41,6 +42,16 @@ const GNRequest = async () => {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json'
     }
+  });
+
+  // Interceptor de requisição
+  instance.interceptors.request.use(async (config) => {
+    if (!config.headers.Authorization) {
+      const authResponse = await authenticate();
+      const newAccessToken = authResponse.data?.access_token;
+      config.headers.Authorization = `Bearer ${newAccessToken}`;
+    }
+    return config;
   });
 
   // Interceptor de resposta para detectar expiração de token
@@ -71,6 +82,5 @@ const GNRequest = async () => {
 
   return instance;
 }
-
 
 module.exports = GNRequest;
