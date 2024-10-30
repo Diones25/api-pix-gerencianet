@@ -30,7 +30,6 @@ const authenticate = () => {
   });
 }
 
-// Função principal de criação de instância
 const GNRequest = async () => {
   let authResponse = await authenticate();
   let accessToken = authResponse.data?.access_token;
@@ -44,7 +43,7 @@ const GNRequest = async () => {
     }
   });
 
-  // Interceptor de requisição
+  // Interceptor de Requisição: verifica se o token está ausente
   instance.interceptors.request.use(async (config) => {
     if (!config.headers.Authorization) {
       const authResponse = await authenticate();
@@ -54,17 +53,16 @@ const GNRequest = async () => {
     return config;
   });
 
-  // Interceptor de resposta para detectar expiração de token
+  // Interceptor de Resposta: renova o token em caso de expiração (erro 401)
   instance.interceptors.response.use(
     (response) => response, // Passa a resposta normalmente se não houver erro
     async (error) => {
       const originalRequest = error.config;
 
-      // Se o erro for 401, significa que o token expirou
       if (error.response && error.response.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true; // Marca a requisição para evitar loops infinitos
+        originalRequest._retry = true;
 
-        // Gera um novo token
+        // Renova o token
         authResponse = await authenticate();
         accessToken = authResponse.data?.access_token;
 
@@ -82,5 +80,6 @@ const GNRequest = async () => {
 
   return instance;
 }
+
 
 module.exports = GNRequest;
